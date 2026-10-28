@@ -1,0 +1,34 @@
+[
+  {
+    "policy_number": "POL-123456",
+    "policy_status_cd": "ACTIVE",
+    "effective_date": "2026-01-01",
+    "expiration_date": "2026-12-31",
+    "product_code": "AUTO_STANDARD",
+    "insured_vehicle": {
+      "veh_identification_number": null,
+      "vehicle_plate": "ABCD12",
+      "manufacturer": "Toyota",
+      "model": "Corolla",
+      "model_year": 2022
+    },
+    "coverages": [
+      {
+        "coverage_cd": "COLLISION",
+        "coverage_description": "Daños por colisión",
+        "limit_amount": 20000000,
+        "deductible_percentage": 10,
+        "minimum_deductible": 150000,
+        "condition_document_id": "AUTO_STANDARD_2026"
+      },
+      {
+        "coverage_cd": "GLASS",
+        "coverage_description": "Daños en cristales",
+        "limit_amount": 1500000,
+        "deductible_percentage": 0,
+        "minimum_deductible": 0,
+        "condition_document_id": "AUTO_STANDARD_2026"
+      }
+    ]
+  }
+]

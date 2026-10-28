@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gestión de siniestros</title>
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Saltar al contenido principal</a>
+
+<header class="topbar">
+  <div class="brand"><span class="logo" aria-hidden="true">GS</span><span class="brand-name">Gestión de siniestros</span></div>
+  <div class="top-right">
+    <div class="notif-wrap" id="notifWrap">
+      <button class="notif-btn" id="notifBtn" type="button" aria-expanded="false" aria-controls="notifPanel" onclick="toggleNotif()">
+        <span class="mi" aria-hidden="true">notifications</span>
+        <span class="notif-badge" id="notifBadge" aria-hidden="true"></span>
+      </button>
+    </div>
+    <div class="user-wrap" id="userWrap">
+      <button class="user-btn" id="userBtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="userMenu" onclick="toggleUserMenu()">
+        <span class="avatar" aria-hidden="true">DM</span><span class="who"><span>Daniela Muñoz</span><small>Analista de siniestros</small></span>
+        <span class="mi" aria-hidden="true">expand_more</span>
+        <span class="sr-only">Abrir menú de usuario</span>
+      </button>
+      <div class="user-menu" id="userMenu" role="menu" aria-labelledby="userBtn" hidden>
+        <div class="user-menu-head" role="presentation"><strong>Daniela Muñoz</strong><span>Analista de siniestros · Automotriz</span></div>
+        <button class="menu-item danger" role="menuitem" type="button" onclick="logout()"><span class="mi" aria-hidden="true">logout</span>Cerrar sesión</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <section id="listView" aria-labelledby="listTitle">
+    <div class="page">
+      <header class="welcome-hero">
+        <p class="eyebrow" id="todayLabel"></p>
+        <h1 id="listTitle" tabindex="-1"></h1>
+        <p class="lead-w" id="welcomeLead"></p>
+        <div class="kpis" id="kpis" role="group" aria-label="Resumen de tus casos"></div>
+      </header>
+      <div class="section-head"><h2>Tus siniestros</h2><p>Ordenados por urgencia. Plazo configurado para demostración: 45 días corridos desde la denuncia para el informe de liquidación.</p></div>
+      <div class="toolbar">
+        <form class="search" role="search" onsubmit="onSearch(event)">
+          <div class="search-field">
+            <label for="q" class="sr-only">Buscar por número de siniestro o RUT del declarante</label>
+            <span class="mi" aria-hidden="true">search</span>
+            <input id="q" type="search" autocomplete="off" placeholder="Ej. CLM-000123 o 99.900.001-0">
+          </div>
+          <button class="btn primary" type="submit">Buscar</button>
+        </form>
+        <div class="filters" role="group" aria-label="Filtrar por estado" id="filters"></div>
+      </div>
+      <div class="table-card">
+        <table class="claims">
+          <caption class="sr-only">Listado de siniestros asignados</caption>
+          <thead><tr><th scope="col">Siniestro</th><th scope="col">RUT declarante</th><th scope="col">Estado</th><th scope="col">Próximo paso</th><th scope="col">Plazo</th><th scope="col"><span class="sr-only">Abrir</span></th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <p class="empty" id="empty" hidden>No hay siniestros que coincidan con la búsqueda o el filtro.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="detailView" aria-labelledby="claimTitle" hidden>
+    <div class="case-head">
+      <div class="page wide">
+        <button class="back" type="button" onclick="goList()"><span class="mi" aria-hidden="true">arrow_back</span> Volver a siniestros</button>
+        <div class="title-row">
+          <div><p class="eyebrow">Siniestro automotriz</p><h1 id="claimTitle" tabindex="-1"></h1></div>
+          <span class="badge" id="claimState"></span>
+          <span class="sla" id="claimSla"></span>
+        </div>
+        <dl class="meta" id="meta"></dl>
+      </div>
+    </div>
+
+    <div class="page wide detail-grid">
+      <div>
+        <section class="task" id="task" aria-labelledby="taskTitle"></section>
+        <div class="tabs" role="tablist" aria-label="Información del siniestro">
+          <button class="tab" role="tab" id="tab-summary" data-tab="summary" aria-controls="panel-summary" aria-selected="true">Resumen</button>
+          <button class="tab" role="tab" id="tab-docs" data-tab="docs" aria-controls="panel-docs" aria-selected="false" tabindex="-1">Documentos <span class="count" id="docCount"></span></button>
+          <button class="tab" role="tab" id="tab-history" data-tab="history" aria-controls="panel-history" aria-selected="false" tabindex="-1">Historial</button>
+        </div>
+        <div role="tabpanel" id="panel-summary" aria-labelledby="tab-summary" tabindex="0">
+          <article class="card"><div class="card-head"><h2>Resumen del caso</h2><span class="tag ai">Generado desde el expediente</span></div><p class="lead" id="summary"></p></article>
+          <article class="card"><div class="card-head"><h2>Hitos del caso</h2><span class="tag">Lo que ya está resuelto</span></div><ul class="milestones" id="milestones" aria-label="Hitos del caso"></ul></article>
+          <article class="card"><div class="card-head"><h2>Datos del siniestro</h2><span class="tag">Hechos · extraídos de documentos</span></div><dl class="data-list" id="dataList"></dl></article>
+          <article class="card" id="customerCard"></article>
+        </div>
+        <div role="tabpanel" id="panel-docs" aria-labelledby="tab-docs" tabindex="0" hidden>
+          <article class="card">
+            <div class="card-head">
+              <div><h2>Documentos del expediente</h2><p class="lead" style="font-size:14px">Cada documento se procesa para extraer sus datos y detectar inconsistencias.</p></div>
+              <button class="btn" type="button" onclick="pickFile()"><span class="mi" aria-hidden="true">add</span>Adjuntar documento</button>
+            </div>
+            <input type="file" id="file" class="sr-only" tabindex="-1" aria-hidden="true" accept="application/pdf,image/jpeg,image/png" onchange="onFile(event)">
+            <div id="docList"></div>
+            <p class="hint">Formatos admitidos: PDF, JPG o PNG. Tamaño máximo: 10 MB.</p>
+          </article>
+        </div>
+        <div role="tabpanel" id="panel-history" aria-labelledby="tab-history" tabindex="0" hidden>
+          <article class="card"><div class="card-head"><h2>Historial del caso</h2><span class="tag">Quién hizo qué</span></div><ol class="timeline" id="timeline"></ol></article>
+        </div>
+      </div>
+
+      <aside class="assistant" aria-labelledby="asstTitle">
+        <div class="asst-head">
+          <span class="asst-icon" aria-hidden="true"><span class="mi" aria-hidden="true">auto_awesome</span></span>
+          <div><h2 id="asstTitle">Asistente del caso</h2><p>Propone y cita la evidencia. Las decisiones son tuyas.</p></div>
+        </div>
+        <p class="backend-status" id="backendStatus" role="status">Modo demo · comprobando backend…</p>
+        <div class="sessions">
+          <label for="sessionSelect">Conversación</label>
+          <select id="sessionSelect" onchange="switchSession(this.value)"></select>
+          <button class="btn sm" type="button" onclick="newSession()">Nueva</button>
+          <button class="btn sm ghost" type="button" id="delSession" onclick="deleteSession()">Eliminar</button>
+        </div>
+        <div class="log" id="log" role="log" aria-live="polite" aria-label="Conversación con el asistente"></div>
+        <div class="suggest" id="suggest" role="group" aria-label="Preguntas sugeridas"></div>
+        <form class="asst-form" onsubmit="onAsk(event)">
+          <div class="composer">
+            <label for="askInput" class="sr-only">Escribe tu pregunta sobre este siniestro</label>
+            <textarea id="askInput" rows="1" placeholder="Pregunta sobre este siniestro…" aria-describedby="askHelp"></textarea>
+            <button class="btn primary" type="submit" aria-label="Enviar pregunta"><span class="mi" aria-hidden="true">send</span></button>
+          </div>
+          <p class="disclaimer" id="askHelp">Enter para enviar · Shift + Enter para nueva línea. Una conversación nueva no recuerda lo hablado en otra.</p>
+        </form>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<section class="logout-view" id="logoutView" aria-labelledby="logoutTitle" hidden>
+  <div class="logout-card">
+    <div class="ic" aria-hidden="true">✓</div>
+    <h1 id="logoutTitle" tabindex="-1">Sesión de demostración cerrada</h1>
+    <p>Las modificaciones realizadas durante esta demostración pertenecen a la sesión actual. Al recargar la página, el prototipo vuelve a su estado inicial.</p>
+    <button class="btn primary" type="button" onclick="login()">Ingresar nuevamente</button>
+  </div>
+</section>
+<div class="notif-backdrop" id="notifBackdrop" hidden onclick="toggleNotif(false)"></div>
+<aside class="notif-panel" id="notifPanel" role="dialog" aria-modal="true" aria-labelledby="notifTitle" hidden>
+  <div class="notif-head"><div><h2 id="notifTitle">Notificaciones</h2><p class="help" id="notifSub" style="margin:0"></p></div>
+    <button class="notif-close" type="button" onclick="toggleNotif(false)" aria-label="Cerrar notificaciones"><span class="mi" aria-hidden="true">close</span></button></div>
+  <div class="notif-tabs" role="group" aria-label="Filtrar notificaciones">
+    <button type="button" class="filter" data-nf="unread" aria-pressed="true" onclick="setNotifFilter('unread')">No leídas</button>
+    <button type="button" class="filter" data-nf="all" aria-pressed="false" onclick="setNotifFilter('all')">Todas</button>
+  </div>
+  <ul class="notif-list" id="notifList" aria-label="Lista de notificaciones"></ul>
+  <div class="notif-foot"><button class="btn ghost sm" type="button" onclick="markAllRead()">Marcar todas como leídas</button></div>
+</aside>
+<div class="md-scrim" id="dlgScrim" hidden></div>
+<div class="md-dialog" id="dlg" role="alertdialog" aria-modal="true" aria-labelledby="dlgTitle" aria-describedby="dlgText" hidden>
+  <span class="mi dlg-icon" id="dlgIcon" aria-hidden="true">help</span>
+  <h2 id="dlgTitle"></h2><p id="dlgText"></p>
+  <div class="dlg-actions"><button class="btn ghost" type="button" id="dlgCancel">Cancelar</button><button class="btn ghost" type="button" id="dlgOk">Confirmar</button></div>
+</div>
+<div class="toast" id="toast" aria-hidden="true"></div>
+<div class="sr-only" id="announce" role="status" aria-live="polite"></div>
+
+<script src="js/app.js"></script>
+</body>
+</html>

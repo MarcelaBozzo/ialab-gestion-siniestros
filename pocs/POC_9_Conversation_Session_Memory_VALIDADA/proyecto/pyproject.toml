@@ -1,0 +1,24 @@
+[project]
+name = "poc-local-claims-agent"
+version = "0.9.0"
+description = "PoC 9 - Conversation Session Memory"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi[standard]",
+    "pydantic-ai-slim[openai]",
+    "httpx",
+    "pypdf",
+    "pillow",
+    "pytesseract",
+    "pypdfium2",
+    "qdrant-client",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]

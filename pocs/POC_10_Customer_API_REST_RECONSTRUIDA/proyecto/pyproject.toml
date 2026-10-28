@@ -1,0 +1,25 @@
+[project]
+name = "poc-local-claims-agent"
+version = "0.10.0"
+description = "PoC 10 reconstructed - Customer REST integration"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi[standard]",
+    "pydantic-ai-slim[openai]",
+    "httpx",
+    "pypdf",
+    "pillow",
+    "pytesseract",
+    "pypdfium2",
+    "qdrant-client",
+    "email-validator",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]

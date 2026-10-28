@@ -1,0 +1,9 @@
+[project]
+name = "poc-local-claims-agent"
+version = "0.1.0"
+description = "PoC 1 - Agente local basico reconstruida desde especificacion"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi[standard]",
+    "pydantic-ai-slim[openai]",
+]

@@ -1,0 +1,8 @@
+{
+  "CLM-000123": {"national_id":"999000010","policy_number":"POL-123456","loss_amount":"1650000","deductible_percentage":"10","minimum_deductible":"150000","vehicle_plate":"ABCD12"},
+  "CLM-000217": {"national_id":"999000029","policy_number":null,"loss_amount":"980000","deductible_percentage":"10","minimum_deductible":"150000","vehicle_plate":"GHTR55"},
+  "CLM-000301": {"national_id":"999000037","policy_number":"POL-220301","loss_amount":"2000000","deductible_percentage":"10","minimum_deductible":"150000","vehicle_plate":"JKLR44"},
+  "CLM-000402": {"national_id":"999000045","policy_number":"POL-402910","loss_amount":"850000","deductible_percentage":"10","minimum_deductible":"150000","vehicle_plate":"PRTX91"},
+  "CLM-000518": {"national_id":"999000010","policy_number":"POL-518772","loss_amount":"1200000","deductible_percentage":"10","minimum_deductible":"150000","vehicle_plate":"LVBN73"},
+  "CLM-000624": {"national_id":"999000061","policy_number":"POL-624118","loss_amount":"3400000","deductible_percentage":"10","minimum_deductible":"150000","vehicle_plate":"HTPL62"}
+}

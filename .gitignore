@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+backend/data/claims/*
+!backend/data/claims/.gitkeep
+backend/data/sessions/*
+!backend/data/sessions/.gitkeep
+.env
+
+# graphify-axet
+.graphify/
+backend/.venv/

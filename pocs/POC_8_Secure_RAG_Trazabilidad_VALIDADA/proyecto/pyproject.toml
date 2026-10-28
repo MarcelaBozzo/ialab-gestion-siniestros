@@ -1,0 +1,24 @@
+[project]
+name = "poc-local-claims-agent"
+version = "0.8.0"
+description = "PoC 8 - Secure RAG y trazabilidad de evidencia"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi[standard]",
+    "pydantic-ai-slim[openai]",
+    "httpx",
+    "pypdf",
+    "pillow",
+    "pytesseract",
+    "pypdfium2",
+    "qdrant-client",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
