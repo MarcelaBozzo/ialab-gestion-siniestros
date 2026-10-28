@@ -73,7 +73,17 @@ CHUNK_OVERLAP = int(
 POLICY_CORE_BASE_URL = os.getenv(
     "POLICY_CORE_BASE_URL",
     "http://localhost:8001",
+).rstrip("/")
+
+POLICY_CORE_TIMEOUT_SECONDS = float(
+    os.getenv(
+        "POLICY_CORE_TIMEOUT_SECONDS",
+        "10",
+    )
 )
+
+if POLICY_CORE_TIMEOUT_SECONDS <= 0:
+    raise ValueError("POLICY_CORE_TIMEOUT_SECONDS must be positive")
 
 QDRANT_CORPORATE_COLLECTION = os.getenv(
     "QDRANT_CORPORATE_COLLECTION",

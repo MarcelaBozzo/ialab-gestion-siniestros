@@ -237,6 +237,7 @@ class Coverage(BaseModel):
     deductible_percentage: Decimal | None = None
     minimum_deductible: Decimal | None = None
     condition_document_id: str | None = None
+    deductible_amount: Decimal | None = None
 
 
 class Policy(BaseModel):
@@ -245,8 +246,32 @@ class Policy(BaseModel):
     effective_date: date
     expiration_date: date
     product_code: str | None = None
+    product_name: str | None = None
+    insured_customer_id: str | None = None
     insured_vehicle: VehInfo | None = None
     coverages: list[Coverage] = Field(default_factory=list)
+    source_system: str = "policy_core"
+    retrieved_at: datetime | None = None
+
+
+class PolicySearchResult(BaseModel):
+    policy_found: bool
+    policy_number: str | None = None
+
+    @model_validator(mode="after")
+    def validate_result(self):
+        if self.policy_found != (self.policy_number is not None):
+            raise ValueError(
+                "policy_number must be present exactly when "
+                "policy_found is true"
+            )
+        return self
+
+
+class PolicyValidationResult(BaseModel):
+    policy_number_matches: bool | None = None
+    vehicle_matches: bool | None = None
+    policy_active_on_loss_dt: bool | None = None
 
 
 class CorporateKnowledgeChunk(BaseModel):
