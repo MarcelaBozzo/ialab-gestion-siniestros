@@ -6,7 +6,7 @@ from app import conversation_memory, conversation_service
 from app.schemas import GuardrailDecision, RequestClassification
 
 
-async def allow_input(_message):
+async def allow_input(_message, conversation_context=None):
     return GuardrailDecision(
         classification=RequestClassification.IN_SCOPE,
         reason="test",
