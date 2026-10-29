@@ -14,3 +14,15 @@ class McpCustomerApiError(McpError):
     pass
 class McpCustomerNotFound(McpError):
     pass
+
+
+class McpPolicyApiUnavailable(McpError):
+    pass
+
+
+class McpPolicyApiError(McpError):
+    pass
+
+
+class McpPolicyNotFound(McpError):
+    pass
