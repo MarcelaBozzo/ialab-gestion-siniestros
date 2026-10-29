@@ -1,5 +1,3 @@
-from datetime import date
-
 from fastapi import HTTPException
 
 from app.policy_client import (
@@ -8,6 +6,7 @@ from app.policy_client import (
     PolicyNotFound,
     get_policy_from_api,
 )
+from app.policy_validation import is_policy_effective_on_loss_date
 from app.schemas import Policy
 
 
@@ -33,10 +32,3 @@ async def get_policy(policy_number: str) -> Policy:
                 else "Policy Core returned an unexpected error"
             ),
         ) from exc
-
-
-def is_policy_effective_on_loss_date(
-    policy: Policy,
-    loss_dt: date,
-) -> bool:
-    return policy.effective_date <= loss_dt <= policy.expiration_date
