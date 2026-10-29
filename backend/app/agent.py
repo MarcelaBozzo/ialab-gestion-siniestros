@@ -10,8 +10,10 @@ from app.schemas import ClaimData
 from app.tools import (
     calculate_deductible,
     calculate_reserve,
+    find_policy_tool,
     get_missing_claim_information,
     get_customer_profile_tool,
+    get_policy_tool,
     verify_customer_tool,
 )
 
@@ -25,6 +27,8 @@ agent = Agent(
         get_missing_claim_information,
         verify_customer_tool,
         get_customer_profile_tool,
+        find_policy_tool,
+        get_policy_tool,
     ],
     system_prompt=(
         "Eres un asistente para analistas de siniestros "
@@ -69,6 +73,18 @@ agent = Agent(
 "Si el identificador nacional está disponible en el contexto del siniestro o en la conversación, úsalo para ejecutar la tool. "        "Solicita un solo campo y nunca el perfil completo. Los datos del Customer System "
         "son la fuente de verdad y prevalecen sobre la Conversation Memory. "
         "No inventes datos de cliente. "
+        "Cuando necesites información de póliza utiliza las herramientas "
+        "autorizadas de Policy MCP. Si ClaimData contiene PolicyNumber, "
+        "utiliza get_policy_tool. Si no existe PolicyNumber pero existe "
+        "una patente del vehículo, puedes utilizar find_policy_tool para "
+        "localizar la póliza. No inventes números de póliza. Cuando la "
+        "aplicación proporcione datos de póliza verificados para el turno "
+        "actual, utilízalos sin repetir la consulta. Policy Core es la "
+        "fuente de verdad de la póliza; no uses Conversation Memory como "
+        "fuente de verdad de póliza. No determines cobertura únicamente a "
+        "partir de la existencia de una Coverage. La presencia de una "
+        "cobertura contratada no significa automáticamente que el siniestro "
+        "particular esté cubierto. No apruebes ni rechaces cobertura. "
         "Las reglas de cálculo disponibles en esta PoC son "
         "experimentales y no representan reglas reales de una "
         "compañía de seguros. "

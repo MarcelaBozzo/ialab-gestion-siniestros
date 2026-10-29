@@ -6,6 +6,7 @@ from app.schemas import (
     ClaimData,
     ClaimDataConflict,
     ClaimsOccurrence,
+    DocumentType,
     EvidenceSource,
     ExtractedEvidence,
     ProcessedClaimCase,
@@ -13,6 +14,12 @@ from app.schemas import (
     VehInfo,
 )
 from app.vector_store import replace_document_chunks
+
+
+LOSS_DATE_SOURCE_TYPES = {
+    DocumentType.CLAIM_REPORT,
+    DocumentType.POLICE_REPORT,
+}
 
 
 def document_text(document: ProcessedDocument) -> str:
@@ -183,7 +190,11 @@ def consolidate_claim_data(
         "PolicyNumber",
     )
     loss_dt = get_consistent_value(
-        extracted,
+        [
+            item
+            for item in extracted
+            if item[0].document_type in LOSS_DATE_SOURCE_TYPES
+        ],
         "ClaimsOccurrence.LossDt",
     )
     loss_time = get_consistent_value(

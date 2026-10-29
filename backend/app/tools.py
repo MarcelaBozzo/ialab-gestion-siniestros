@@ -1,8 +1,11 @@
 from decimal import Decimal
 from typing import Literal
 
+from app.policy_service import find_claim_policy, get_claim_policy
 from app.schemas import (
     DeductibleCalculation,
+    Policy,
+    PolicySearchResult,
     ReserveCalculation,
 )
 
@@ -85,3 +88,17 @@ async def get_customer_profile_tool(
     """Devuelve solo el dato personal solicitado del declarante."""
     from app.customer_service import get_claimant_customer_profile
     return await get_claimant_customer_profile(national_id, requested_field)
+
+
+async def find_policy_tool(
+    vehicle_plate: str,
+) -> PolicySearchResult:
+    """Locate a policy by vehicle; this does not determine coverage."""
+    return await find_claim_policy(vehicle_plate)
+
+
+async def get_policy_tool(
+    policy_number: str,
+) -> Policy:
+    """Retrieve current structured policy data from Policy Core."""
+    return await get_claim_policy(policy_number)
