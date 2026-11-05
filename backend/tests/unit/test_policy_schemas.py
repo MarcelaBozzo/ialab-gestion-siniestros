@@ -70,6 +70,7 @@ def test_policy_search_result_accepts_consistent_values(
 
     assert result.policy_found is policy_found
     assert result.policy_number == policy_number
+    assert result.ambiguous is False
 
 
 @pytest.mark.parametrize(
@@ -84,6 +85,32 @@ def test_policy_search_result_rejects_inconsistent_values(
         PolicySearchResult(
             policy_found=policy_found,
             policy_number=policy_number,
+        )
+
+
+def test_policy_search_result_accepts_ambiguous_without_selected_policy():
+    result = PolicySearchResult(
+        policy_found=False,
+        policy_number=None,
+        ambiguous=True,
+    )
+
+    assert result.ambiguous is True
+
+
+@pytest.mark.parametrize(
+    ("policy_found", "policy_number"),
+    [(True, "POL-123456"), (True, None), (False, "POL-123456")],
+)
+def test_policy_search_result_rejects_ambiguous_selected_policy(
+    policy_found,
+    policy_number,
+):
+    with pytest.raises(ValidationError):
+        PolicySearchResult(
+            policy_found=policy_found,
+            policy_number=policy_number,
+            ambiguous=True,
         )
 
 

@@ -173,18 +173,39 @@ async def test_find_policy_returns_not_found_on_404():
 
     assert result.policy_found is False
     assert result.policy_number is None
+    assert result.ambiguous is False
 
 
-@pytest.mark.parametrize(
-    ("status_code", "error_type"),
-    [(409, PolicyApiError), (500, PolicyApiUnavailable)],
-)
 @pytest.mark.asyncio
-async def test_find_policy_maps_http_errors(status_code, error_type):
-    with pytest.raises(error_type):
+async def test_find_policy_returns_ambiguous_result_on_409():
+    result = await find_policy_by_vehicle_from_api(
+        "ABCD12",
+        transport=mock_transport(
+            status_code=409,
+            json_data={"detail": "Policy lookup is ambiguous"},
+        ),
+    )
+
+    assert result.policy_found is False
+    assert result.policy_number is None
+    assert result.ambiguous is True
+
+
+@pytest.mark.asyncio
+async def test_find_policy_maps_server_error_to_unavailable():
+    with pytest.raises(PolicyApiUnavailable):
         await find_policy_by_vehicle_from_api(
             "ABCD12",
-            transport=mock_transport(status_code=status_code),
+            transport=mock_transport(status_code=500),
+        )
+
+
+@pytest.mark.asyncio
+async def test_find_policy_preserves_other_http_errors_as_technical():
+    with pytest.raises(PolicyApiError):
+        await find_policy_by_vehicle_from_api(
+            "ABCD12",
+            transport=mock_transport(status_code=422),
         )
 
 

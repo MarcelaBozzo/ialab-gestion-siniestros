@@ -85,6 +85,29 @@ POLICY_CORE_TIMEOUT_SECONDS = float(
 if POLICY_CORE_TIMEOUT_SECONDS <= 0:
     raise ValueError("POLICY_CORE_TIMEOUT_SECONDS must be positive")
 
+POLICY_AGENT_A2A_URL = os.getenv(
+    "POLICY_AGENT_A2A_URL",
+    "http://localhost:8002",
+).rstrip("/")
+
+POLICY_AGENT_A2A_CONNECT_TIMEOUT_SECONDS = float(
+    os.getenv("POLICY_AGENT_A2A_CONNECT_TIMEOUT_SECONDS", "5")
+)
+
+POLICY_AGENT_A2A_READ_TIMEOUT_SECONDS = float(
+    os.getenv("POLICY_AGENT_A2A_READ_TIMEOUT_SECONDS", "60")
+)
+
+if POLICY_AGENT_A2A_CONNECT_TIMEOUT_SECONDS <= 0:
+    raise ValueError(
+        "POLICY_AGENT_A2A_CONNECT_TIMEOUT_SECONDS must be positive"
+    )
+
+if POLICY_AGENT_A2A_READ_TIMEOUT_SECONDS <= 0:
+    raise ValueError(
+        "POLICY_AGENT_A2A_READ_TIMEOUT_SECONDS must be positive"
+    )
+
 QDRANT_CORPORATE_COLLECTION = os.getenv(
     "QDRANT_CORPORATE_COLLECTION",
     "corporate-knowledge",

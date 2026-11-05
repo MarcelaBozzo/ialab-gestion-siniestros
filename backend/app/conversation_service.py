@@ -2,7 +2,11 @@ import json
 import logging
 import re
 
-from app.agent import agent
+from app.a2a.errors import A2AError
+from app.agents.claims_agent import (
+    ClaimsAgentDependencies,
+    agent,
+)
 from app.claim_processing import process_claim_documents
 from app.conversation_context import build_conversation_context
 from app.conversation_memory import (
@@ -40,6 +44,11 @@ BLOCKED_INPUT_RESPONSE = (
 
 BLOCKED_OUTPUT_RESPONSE = (
     "No puedo proporcionar la respuesta generada."
+)
+
+A2A_UNAVAILABLE_RESPONSE = (
+    "El análisis especializado de cobertura no está disponible en este "
+    "momento. La revisión humana queda pendiente."
 )
 
 
@@ -326,18 +335,37 @@ Current user message:
 {answer_rule}
 """
 
-            result = await agent.run(prompt)
-
-            candidate = str(result.output).strip()
-
-            output_decision = await validate_output(candidate)
-
-            response = (
-                candidate
-                if output_decision.classification
-                == RequestClassification.IN_SCOPE
-                else BLOCKED_OUTPUT_RESPONSE
+            claim_data = (
+                ClaimData.model_validate_json(claim_data_json)
+                if claim_data_json
+                else None
             )
+            dependencies = ClaimsAgentDependencies(
+                claim_number=session.claim_number,
+                claim_data=claim_data,
+                relevant_document_evidence=[],
+            )
+            try:
+                result = await agent.run(
+                    prompt,
+                    deps=dependencies,
+                )
+            except A2AError:
+                logger.exception(
+                    "Specialized Policy Agent analysis is unavailable"
+                )
+                response = A2A_UNAVAILABLE_RESPONSE
+            else:
+                candidate = str(result.output).strip()
+
+                output_decision = await validate_output(candidate)
+
+                response = (
+                    candidate
+                    if output_decision.classification
+                    == RequestClassification.IN_SCOPE
+                    else BLOCKED_OUTPUT_RESPONSE
+                )
 
     now = utc_now()
 

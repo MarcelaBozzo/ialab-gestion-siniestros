@@ -32,7 +32,7 @@ async def test_conversation_remembers_previous_turn(tmp_path, monkeypatch):
         AsyncMock(return_value=None),
     )
 
-    async def conversational_run(prompt):
+    async def conversational_run(prompt, deps=None):
         response = (
             "Dijimos que ocurrió en Providencia."
             if "Providencia" in prompt

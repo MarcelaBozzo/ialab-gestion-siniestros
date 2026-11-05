@@ -81,7 +81,10 @@ def conversation_setup(tmp_path, monkeypatch):
 
     prompts = []
 
-    async def run_agent(prompt):
+    async def run_agent(prompt, deps=None):
+        assert deps is not None
+        assert deps.claim_number == "CLM-000123"
+        assert not hasattr(deps, "session_id")
         prompts.append(prompt)
         return SimpleNamespace(output="Respuesta basada en datos verificados")
 

@@ -37,6 +37,36 @@ async def test_policy_mcp_serializes_pydantic_result_as_structured_content(
     assert result.structured_content == {
         "policy_found": True,
         "policy_number": "POL-123456",
+        "ambiguous": False,
+    }
+
+
+@pytest.mark.asyncio
+async def test_policy_mcp_serializes_ambiguous_search_as_functional_result(
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        policy_server,
+        "find_policy_by_vehicle_from_api",
+        AsyncMock(
+            return_value=PolicySearchResult(
+                policy_found=False,
+                policy_number=None,
+                ambiguous=True,
+            )
+        ),
+    )
+
+    result = await policy_server.mcp.call_tool(
+        "find_policy",
+        {"vehicle_plate": "ABCD12"},
+    )
+
+    assert result.is_error is False
+    assert result.structured_content == {
+        "policy_found": False,
+        "policy_number": None,
+        "ambiguous": True,
     }
 
 

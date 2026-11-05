@@ -1,8 +1,10 @@
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 import pytest
 
 from app import conversation_memory, conversation_service
+from app.a2a.errors import A2AAgentUnavailable
 from app.schemas import GuardrailDecision, RequestClassification
 
 
@@ -25,7 +27,7 @@ async def test_failed_agent_call_does_not_persist_turn(tmp_path, monkeypatch):
     monkeypatch.setattr(conversation_memory, "CONVERSATION_STORAGE_PATH", tmp_path)
     monkeypatch.setattr(conversation_service, "validate_input", allow_input)
 
-    async def failing_run(prompt):
+    async def failing_run(prompt, deps=None):
         raise RuntimeError("Agent unavailable")
 
     monkeypatch.setattr(conversation_service.agent, "run", failing_run)
@@ -50,7 +52,7 @@ async def test_summary_failure_keeps_response_and_turn(tmp_path, monkeypatch):
     monkeypatch.setattr(conversation_service, "validate_input", allow_input)
     monkeypatch.setattr(conversation_service, "validate_output", allow_output)
 
-    async def successful_run(prompt):
+    async def successful_run(prompt, deps=None):
         return SimpleNamespace(output="Respuesta conservada")
 
     async def failing_summary(messages, existing_summary=None):
@@ -70,3 +72,31 @@ async def test_summary_failure_keeps_response_and_turn(tmp_path, monkeypatch):
     assert persisted is not None
     assert len(persisted.messages) == 2
     assert persisted.summary is None
+
+
+@pytest.mark.asyncio
+async def test_a2a_unavailable_returns_controlled_response_and_keeps_turn(
+    tmp_path,
+    monkeypatch,
+):
+    monkeypatch.setattr(conversation_memory, "CONVERSATION_STORAGE_PATH", tmp_path)
+    monkeypatch.setattr(conversation_service, "validate_input", allow_input)
+    monkeypatch.setattr(
+        conversation_service.agent,
+        "run",
+        AsyncMock(side_effect=A2AAgentUnavailable("offline")),
+    )
+    session = conversation_memory.create_session(claim_number="CLM-000123")
+
+    response = await conversation_service.process_conversation_turn(
+        session_id=session.session_id,
+        message="Analiza la cobertura",
+    )
+
+    assert response == conversation_service.A2A_UNAVAILABLE_RESPONSE
+    persisted = conversation_memory.get_session(session.session_id)
+    assert persisted is not None
+    assert [message.role for message in persisted.messages] == [
+        "user",
+        "assistant",
+    ]

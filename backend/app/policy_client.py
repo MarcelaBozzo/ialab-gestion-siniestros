@@ -117,6 +117,13 @@ async def find_policy_by_vehicle_from_api(
             policy_number=None,
         )
 
+    if response.status_code == 409:
+        return PolicySearchResult(
+            policy_found=False,
+            policy_number=None,
+            ambiguous=True,
+        )
+
     if response.status_code >= 500:
         raise PolicyApiUnavailable(
             f"Policy API unavailable: HTTP {response.status_code}"

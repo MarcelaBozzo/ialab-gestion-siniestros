@@ -257,13 +257,18 @@ class Policy(BaseModel):
 class PolicySearchResult(BaseModel):
     policy_found: bool
     policy_number: str | None = None
+    ambiguous: bool = False
 
     @model_validator(mode="after")
     def validate_result(self):
-        if self.policy_found != (self.policy_number is not None):
+        if self.ambiguous:
+            if self.policy_found or self.policy_number is not None:
+                raise ValueError(
+                    "ambiguous results cannot select a policy"
+                )
+        elif self.policy_found != (self.policy_number is not None):
             raise ValueError(
-                "policy_number must be present exactly when "
-                "policy_found is true"
+                "policy_number must be present exactly when policy_found is true"
             )
         return self
 
@@ -272,6 +277,41 @@ class PolicyValidationResult(BaseModel):
     policy_number_matches: bool | None = None
     vehicle_matches: bool | None = None
     policy_active_on_loss_dt: bool | None = None
+
+
+class CoverageAssessment(str, Enum):
+    POTENTIALLY_COVERED = "POTENTIALLY_COVERED"
+    POTENTIALLY_NOT_COVERED = "POTENTIALLY_NOT_COVERED"
+    REQUIRES_REVIEW = "REQUIRES_REVIEW"
+    INSUFFICIENT_INFORMATION = "INSUFFICIENT_INFORMATION"
+
+
+class CorporateSourceType(str, Enum):
+    POLICY_CONDITIONS = "POLICY_CONDITIONS"
+    GENERAL_CONDITIONS = "GENERAL_CONDITIONS"
+    COVERAGE_MATRIX = "COVERAGE_MATRIX"
+    CLAIMS_PROCEDURE = "CLAIMS_PROCEDURE"
+
+
+class CoverageEvidence(BaseModel):
+    source_document: str
+    source_type: CorporateSourceType
+    clause_id: str | None = None
+    page: int | None = None
+    excerpt: str | None = None
+
+
+class CoverageAnalysis(BaseModel):
+    claim_number: str
+    policy_number: str | None = None
+    assessment: CoverageAssessment
+    rationale: str
+    applicable_coverages: list[str] = Field(default_factory=list)
+    applicable_exclusions: list[str] = Field(default_factory=list)
+    policy_validation: PolicyValidationResult | None = None
+    evidence: list[CoverageEvidence] = Field(default_factory=list)
+    missing_information: list[str] = Field(default_factory=list)
+    confidence: float = Field(ge=0.0, le=1.0)
 
 
 class CorporateKnowledgeChunk(BaseModel):
@@ -289,6 +329,7 @@ class CorporateKnowledgeSearchRequest(BaseModel):
     query: str = Field(min_length=1)
     product_code: str | None = None
     coverage_cd: str | None = None
+    document_type: CorporateSourceType | None = None
     limit: int = Field(default=5, ge=1, le=50)
 
     @model_validator(mode="after")
@@ -329,6 +370,16 @@ class EvidenceReference(BaseModel):
     content: str | None = None
 
 
+class CoverageAnalysisRequest(BaseModel):
+    claim_number: str = Field(min_length=1)
+    policy_number: str | None = None
+    claims_occurrence: ClaimsOccurrence | None = None
+    veh_info: VehInfo | None = None
+    relevant_document_evidence: list[EvidenceReference] = Field(
+        default_factory=list
+    )
+
+
 class GroundedAnswer(BaseModel):
     answer: str
     evidence: list[EvidenceReference] = Field(default_factory=list)
@@ -341,6 +392,7 @@ class SecureSearchRequest(BaseModel):
 class SecureCorporateSearchRequest(SecureSearchRequest):
     product_code: str | None = None
     coverage_cd: str | None = None
+    document_type: CorporateSourceType | None = None
 
 
 class ConversationMessage(BaseModel):
@@ -400,3 +452,9 @@ class CustomerMcpHealthResponse(BaseModel):
     status: Literal["ok"]
     server: Literal["customer-mcp"]
     tools: list[str]
+
+
+class PolicyAgentHealthResponse(BaseModel):
+    status: Literal["ok"]
+    agent: Literal["policy-agent"]
+    skills: list[str]

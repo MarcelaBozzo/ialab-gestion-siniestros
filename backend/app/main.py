@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+import logging
 from pathlib import Path
 from fastapi import (
     FastAPI,
@@ -10,6 +12,8 @@ from fastapi import (
 from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
 
+from app.a2a.errors import A2AError
+from app.a2a.policy_client import policy_a2a_client
 from app.agent import (
     GROUNDED_INSUFFICIENT_EVIDENCE,
     agent,
@@ -78,8 +82,33 @@ from app.schemas import (
     CustomerMcpHealthResponse,
     CustomerProfile,
     CustomerVerification,
+    CorporateSourceType,
+    CoverageAnalysis,
+    CoverageAnalysisRequest,
+    CoverageAssessment,
+    CoverageEvidence,
+    PolicyAgentHealthResponse,
+    PolicyValidationResult,
 )
 from app.vector_store import delete_document_chunks, qdrant_client
+
+
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    try:
+        await policy_a2a_client.start()
+    except A2AError:
+        logger.exception(
+            "Policy Agent A2A discovery failed during Claims API startup"
+        )
+
+    try:
+        yield
+    finally:
+        await policy_a2a_client.close()
 
 
 app = FastAPI(
@@ -92,6 +121,7 @@ app = FastAPI(
     docs_url="/swagger-ui",
     openapi_url="/api-docs/openapi.json",
     redoc_url=None,
+    lifespan=lifespan,
 )
 
 app.include_router(health_router)
@@ -122,13 +152,38 @@ def custom_openapi():
     decision_schema.pop("$defs", None)
     schemas["ContentGuardrailDecision"] = decision_schema
 
-    for model in (CustomerVerification, CustomerProfile):
+    for model in (
+        CustomerVerification,
+        CustomerProfile,
+        CoverageAnalysisRequest,
+        CoverageAnalysis,
+        CoverageEvidence,
+        PolicyValidationResult,
+        PolicyAgentHealthResponse,
+    ):
         model_schema = model.model_json_schema(
             ref_template="#/components/schemas/{model}"
         )
         definitions = model_schema.pop("$defs", {})
         schemas.update(definitions)
         schemas[model.__name__] = model_schema
+
+    schemas.setdefault(
+        "CoverageAssessment",
+        {
+            "type": "string",
+            "enum": [item.value for item in CoverageAssessment],
+            "title": "CoverageAssessment",
+        },
+    )
+    schemas.setdefault(
+        "CorporateSourceType",
+        {
+            "type": "string",
+            "enum": [item.value for item in CorporateSourceType],
+            "title": "CorporateSourceType",
+        },
+    )
 
     app.openapi_schema = schema
     return app.openapi_schema
@@ -424,12 +479,24 @@ async def index_corporate_knowledge_endpoint() -> dict[str, int | str]:
 async def search_corporate_knowledge_endpoint(
     request: CorporateKnowledgeSearchRequest,
 ) -> list[CorporateKnowledgeChunk]:
-    return await search_corporate_knowledge(
-        query=request.query,
-        product_code=request.product_code,
-        coverage_cd=request.coverage_cd,
-        limit=request.limit,
-    )
+    try:
+        return await search_corporate_knowledge(
+            query=request.query,
+            product_code=request.product_code,
+            coverage_cd=request.coverage_cd,
+            document_type=request.document_type,
+            limit=request.limit,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid corporate search filters",
+        ) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Corporate retrieval is unavailable",
+        ) from exc
 
 INSUFFICIENT_EVIDENCE = GROUNDED_INSUFFICIENT_EVIDENCE
 
@@ -473,6 +540,7 @@ async def secure_corporate_search_endpoint(
             query=request.query,
             product_code=request.product_code,
             coverage_cd=request.coverage_cd,
+            document_type=request.document_type,
         )
     except ValueError as exc:
         raise HTTPException(
