@@ -43,6 +43,15 @@ async def set_mcp_result(monkeypatch, result):
             False,
             None,
         ),
+        (
+            {
+                "policy_found": False,
+                "policy_number": None,
+                "ambiguous": True,
+            },
+            False,
+            None,
+        ),
     ],
 )
 @pytest.mark.asyncio
@@ -58,6 +67,7 @@ async def test_find_claim_policy_validates_existence_result(
 
     assert result.policy_found is expected_found
     assert result.policy_number == expected_number
+    assert result.ambiguous is payload.get("ambiguous", False)
     assert calls == [
         ("find_policy", {"vehicle_plate": "AB-CD 12"})
     ]

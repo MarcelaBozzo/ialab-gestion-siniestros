@@ -36,6 +36,7 @@ def make_policy(**updates) -> Policy:
     [
         (PolicySearchResult(policy_found=True, policy_number="POL-1"), True),
         (PolicySearchResult(policy_found=False), False),
+        (PolicySearchResult(policy_found=False, ambiguous=True), False),
     ],
 )
 def test_validate_policy_exists(search_result, expected):

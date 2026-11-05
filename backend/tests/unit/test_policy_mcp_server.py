@@ -40,6 +40,24 @@ async def test_find_policy_returns_structured_search_result(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_find_policy_preserves_ambiguous_functional_result(monkeypatch):
+    expected = PolicySearchResult(
+        policy_found=False,
+        policy_number=None,
+        ambiguous=True,
+    )
+    monkeypatch.setattr(
+        policy_server,
+        "find_policy_by_vehicle_from_api",
+        AsyncMock(return_value=expected),
+    )
+
+    result = await policy_server.find_policy("ABCD12")
+
+    assert result is expected
+
+
+@pytest.mark.asyncio
 async def test_get_policy_returns_structured_policy(monkeypatch):
     expected = Policy(
         policy_number="POL-123456",
