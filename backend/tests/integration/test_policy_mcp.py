@@ -37,6 +37,7 @@ async def test_policy_mcp_serializes_pydantic_result_as_structured_content(
     assert result.structured_content == {
         "policy_found": True,
         "policy_number": "POL-123456",
+        "ambiguous": False,
     }
 
 

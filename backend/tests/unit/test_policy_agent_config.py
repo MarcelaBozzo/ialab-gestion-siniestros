@@ -1,0 +1,11 @@
+from app.config import (
+    POLICY_AGENT_A2A_CONNECT_TIMEOUT_SECONDS,
+    POLICY_AGENT_A2A_READ_TIMEOUT_SECONDS,
+    POLICY_AGENT_A2A_URL,
+)
+
+
+def test_policy_agent_a2a_configuration_is_valid():
+    assert POLICY_AGENT_A2A_URL == POLICY_AGENT_A2A_URL.rstrip("/")
+    assert POLICY_AGENT_A2A_CONNECT_TIMEOUT_SECONDS > 0
+    assert POLICY_AGENT_A2A_READ_TIMEOUT_SECONDS > 0
