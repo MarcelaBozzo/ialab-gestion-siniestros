@@ -2,6 +2,7 @@ import json
 import logging
 import re
 
+from app.a2a.errors import A2AError
 from app.agents.claims_agent import (
     ClaimsAgentDependencies,
     agent,
@@ -43,6 +44,11 @@ BLOCKED_INPUT_RESPONSE = (
 
 BLOCKED_OUTPUT_RESPONSE = (
     "No puedo proporcionar la respuesta generada."
+)
+
+A2A_UNAVAILABLE_RESPONSE = (
+    "El análisis especializado de cobertura no está disponible en este "
+    "momento. La revisión humana queda pendiente."
 )
 
 
@@ -339,21 +345,27 @@ Current user message:
                 claim_data=claim_data,
                 relevant_document_evidence=[],
             )
-            result = await agent.run(
-                prompt,
-                deps=dependencies,
-            )
+            try:
+                result = await agent.run(
+                    prompt,
+                    deps=dependencies,
+                )
+            except A2AError:
+                logger.exception(
+                    "Specialized Policy Agent analysis is unavailable"
+                )
+                response = A2A_UNAVAILABLE_RESPONSE
+            else:
+                candidate = str(result.output).strip()
 
-            candidate = str(result.output).strip()
+                output_decision = await validate_output(candidate)
 
-            output_decision = await validate_output(candidate)
-
-            response = (
-                candidate
-                if output_decision.classification
-                == RequestClassification.IN_SCOPE
-                else BLOCKED_OUTPUT_RESPONSE
-            )
+                response = (
+                    candidate
+                    if output_decision.classification
+                    == RequestClassification.IN_SCOPE
+                    else BLOCKED_OUTPUT_RESPONSE
+                )
 
     now = utc_now()
 
