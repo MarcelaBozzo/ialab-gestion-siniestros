@@ -424,12 +424,24 @@ async def index_corporate_knowledge_endpoint() -> dict[str, int | str]:
 async def search_corporate_knowledge_endpoint(
     request: CorporateKnowledgeSearchRequest,
 ) -> list[CorporateKnowledgeChunk]:
-    return await search_corporate_knowledge(
-        query=request.query,
-        product_code=request.product_code,
-        coverage_cd=request.coverage_cd,
-        limit=request.limit,
-    )
+    try:
+        return await search_corporate_knowledge(
+            query=request.query,
+            product_code=request.product_code,
+            coverage_cd=request.coverage_cd,
+            document_type=request.document_type,
+            limit=request.limit,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid corporate search filters",
+        ) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Corporate retrieval is unavailable",
+        ) from exc
 
 INSUFFICIENT_EVIDENCE = GROUNDED_INSUFFICIENT_EVIDENCE
 
@@ -473,6 +485,7 @@ async def secure_corporate_search_endpoint(
             query=request.query,
             product_code=request.product_code,
             coverage_cd=request.coverage_cd,
+            document_type=request.document_type,
         )
     except ValueError as exc:
         raise HTTPException(

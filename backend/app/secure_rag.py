@@ -6,6 +6,8 @@ from app.retrieval import search_claim_documents
 from app.schemas import (
     ContentClassification,
     CorporateKnowledgeChunk,
+    CorporateSourceType,
+    CoverageEvidence,
     DocumentChunk,
     EvidenceReference,
     EvidenceType,
@@ -13,6 +15,12 @@ from app.schemas import (
 
 
 logger = logging.getLogger(__name__)
+
+
+CONTRACTUAL_SOURCE_TYPES = {
+    CorporateSourceType.POLICY_CONDITIONS,
+    CorporateSourceType.GENERAL_CONDITIONS,
+}
 
 
 async def secure_search_claim_documents(
@@ -35,15 +43,42 @@ async def secure_search_corporate_knowledge(
     query: str,
     product_code: str | None = None,
     coverage_cd: str | None = None,
+    document_type: str | None = None,
     limit: int = 5,
 ) -> list[CorporateKnowledgeChunk]:
-    chunks = await search_corporate_knowledge(
-        query=query,
-        product_code=product_code,
-        coverage_cd=coverage_cd,
-        limit=limit,
-    )
-    return await filter_safe_chunks(chunks)
+    if product_code is not None and document_type is None:
+        specific_chunks = await search_corporate_knowledge(
+            query=query,
+            product_code=product_code,
+            coverage_cd=coverage_cd,
+            document_type=CorporateSourceType.POLICY_CONDITIONS.value,
+            limit=limit,
+        )
+        general_chunks = await search_corporate_knowledge(
+            query=query,
+            coverage_cd=coverage_cd,
+            document_type=CorporateSourceType.GENERAL_CONDITIONS.value,
+            limit=limit,
+        )
+        chunks = specific_chunks + general_chunks
+    else:
+        chunks = await search_corporate_knowledge(
+            query=query,
+            product_code=product_code,
+            coverage_cd=coverage_cd,
+            document_type=document_type,
+            limit=limit,
+        )
+
+    safe_chunks = await filter_safe_chunks(chunks)
+    unique_chunks: list[CorporateKnowledgeChunk] = []
+    seen: set[tuple[str, int | None, int]] = set()
+    for chunk in safe_chunks:
+        key = (chunk.document_id, chunk.page, chunk.chunk_index)
+        if key not in seen:
+            seen.add(key)
+            unique_chunks.append(chunk)
+    return unique_chunks
 
 
 async def filter_safe_chunks(chunks, claim_number=None):
@@ -111,6 +146,22 @@ def evidence_from_corporate_chunk(
         product_code=chunk.product_code,
         coverage_cd=chunk.coverage_cd,
         content=chunk.content,
+    )
+
+
+def evidence_from_contractual_chunk(
+    chunk: CorporateKnowledgeChunk,
+) -> CoverageEvidence:
+    if chunk.document_type not in CONTRACTUAL_SOURCE_TYPES:
+        raise ValueError(
+            "Corporate source is not a contractual document"
+        )
+
+    return CoverageEvidence(
+        source_document=chunk.document_id,
+        source_type=CorporateSourceType(chunk.document_type),
+        page=chunk.page,
+        excerpt=chunk.content,
     )
 
 

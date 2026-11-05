@@ -203,6 +203,7 @@ async def search_corporate_knowledge(
     query: str,
     product_code: str | None = None,
     coverage_cd: str | None = None,
+    document_type: str | None = None,
     limit: int = 5,
 ) -> list[CorporateKnowledgeChunk]:
     if not query.strip():
@@ -214,7 +215,9 @@ async def search_corporate_knowledge(
         collection_name=QDRANT_CORPORATE_COLLECTION
     )
     if not exists:
-        return []
+        raise RuntimeError(
+            "Corporate knowledge collection is not initialized"
+        )
 
     query_vector = await create_query_embedding(query)
     conditions: list[models.FieldCondition] = []
@@ -232,6 +235,14 @@ async def search_corporate_knowledge(
             models.FieldCondition(
                 key="coverage_cd",
                 match=models.MatchValue(value=coverage_cd),
+            )
+        )
+
+    if document_type is not None:
+        conditions.append(
+            models.FieldCondition(
+                key="document_type",
+                match=models.MatchValue(value=document_type),
             )
         )
 
