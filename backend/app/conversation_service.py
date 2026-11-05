@@ -2,7 +2,10 @@ import json
 import logging
 import re
 
-from app.agent import agent
+from app.agents.claims_agent import (
+    ClaimsAgentDependencies,
+    agent,
+)
 from app.claim_processing import process_claim_documents
 from app.conversation_context import build_conversation_context
 from app.conversation_memory import (
@@ -326,7 +329,20 @@ Current user message:
 {answer_rule}
 """
 
-            result = await agent.run(prompt)
+            claim_data = (
+                ClaimData.model_validate_json(claim_data_json)
+                if claim_data_json
+                else None
+            )
+            dependencies = ClaimsAgentDependencies(
+                claim_number=session.claim_number,
+                claim_data=claim_data,
+                relevant_document_evidence=[],
+            )
+            result = await agent.run(
+                prompt,
+                deps=dependencies,
+            )
 
             candidate = str(result.output).strip()
 
